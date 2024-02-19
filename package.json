@@ -1,0 +1,44 @@
+{
+    "name": "jakyll",
+    "version": "0.5.0",
+    "description": "Node.js Jekyll alternative",
+    "type": "commonjs",
+    "bin": {
+        "jakyll": "dist/index.js"
+    },
+    "engines": {
+        "npm": ">=8",
+        "node": ">=18"
+    },
+    "scripts": {
+        "build": "tsc",
+        "prepublish": "npm run build",
+        "dev": "npm run build && npm pack"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/iambriansreed/jakyll.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/iambriansreed/jakyll/issues"
+    },
+    "homepage": "https://github.com/iambriansreed/jakyll#readme",
+    "devDependencies": {
+        "@types/chalk": "^2.2.0",
+        "@types/node": "^20.11.19",
+        "typescript": "^5.3.3"
+    },
+    "dependencies": {
+        "chalk": "^4.1.2",
+        "chokidar": "^3.6.0",
+        "commander": "^12.0.0",
+        "dotenv": "^16.4.4",
+        "gh-pages": "^6.0.0",
+        "handlebars": "^4.7.8",
+        "http-server": "^14.1.1",
+        "marked": "^10.0.0",
+        "moment": "^2.30.1"
+    }
+}
