@@ -104,7 +104,7 @@ const refreshInterval = setInterval(async () => {
             { depth: 99, persistent: true }
         )
         .on('change', async (path) => {
-            console.log(chalk.yellow('File changed: '), path);
+            console.log(chalk.yellow('File changed: '), path.replace(process.cwd(), ''));
             routePages = createRoutePages();
             lastRefresh = new Date().toISOString();
         });
