@@ -1,0 +1,15 @@
+{
+    "name": "example",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "npm run --prefix ../ build && npm uninstall jakyll && npm install file:../ || true && jakyll -dev",
+        "build": "jakyll -build",
+        "start": "jakyll -start",
+        "deploy": "jakyll -deploy"
+    },
+    "author": "",
+    "license": "ISC"
+}
