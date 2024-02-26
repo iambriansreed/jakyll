@@ -14,7 +14,7 @@ import init from './install';
     console.log(chalk.whiteBright.bgGreenBright('\n  Jakyll.js  \n'));
 
     program
-        .version('0.5.4')
+        .version('0.5.5')
         .option('-dev', 'Run the site in development mode with hot reloading')
         .option('-build', 'Build a static version of the site and run it in production mode')
         .option('-start', 'Run it in production mode')

@@ -129,7 +129,7 @@ const refreshInterval = setInterval(async () => {
             logContent(site.pages);
         });
 
-    const port = process.env.PORT || '8080';
+    const port = process.env.PORT || '4000';
     const host = process.env.HOST || 'localhost';
 
     // Create a server

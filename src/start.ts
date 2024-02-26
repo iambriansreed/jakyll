@@ -5,7 +5,7 @@ import build from './build';
 export default async () => {
     await build();
 
-    const port = process.env.PORT || '8080';
+    const port = process.env.PORT || '4000';
     const host = process.env.HOST || 'localhost';
     console.info(chalk.green(`\nProduction site is running at http://${host}:${port}`));
 

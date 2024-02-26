@@ -1,6 +1,6 @@
 {
     "name": "jakyll",
-    "version": "0.5.4",
+    "version": "0.5.5",
     "description": "Node.js Jekyll alternative",
     "type": "commonjs",
     "bin": {
