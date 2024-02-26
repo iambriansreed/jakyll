@@ -4,10 +4,22 @@ import url from 'node:url';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
 
-import html500 from './utils/500.html';
-import { fileReadBuffer } from './utils/file';
+import fileRead, { fileReadBuffer } from './utils/file';
 import buildHtml from './utils/buildHtml';
-import { RoutePages, createRoutePages, logRoutePages } from './utils/page';
+import { rootDir, validateExistingSite } from './utils/common';
+import { Site, parseFiles } from './utils/parseFiles';
+
+/**
+ * log the content created
+ */
+export const logContent = (contents: Site['pages']) => {
+    Object.entries(contents.kinds).forEach(([kind, contents]) => {
+        console.log(chalk.green('\n' + Object.keys(kind).length + ' ' + kind + ' generated: \n'));
+        contents.sort((r1, r2) => (r1.url > r2.url ? 1 : -1)).forEach(({ url }) => console.log(url));
+    });
+};
+
+validateExistingSite();
 
 type DevResponse = {
     chunk: string | Buffer;
@@ -15,11 +27,15 @@ type DevResponse = {
     headers: Record<string, string>;
 };
 
+const html500 = fileRead(path.join(path.dirname(require.main?.filename || ''), '500.html'));
+
 export default async () => {
+    console.log(chalk.greenBright('Dev mode starting...'));
+
     /**
-     * parse the page content from the content directory and build the route pages
+     * parse the page content from the content directory and build the page pages
      */
-    let routePages: RoutePages = {};
+    let site = parseFiles();
 
     /**
      * get the content type based on the file extension
@@ -68,12 +84,17 @@ const refreshInterval = setInterval(async () => {
         return {
             chunk: addDevScript(
                 await buildHtml(
-                    routePages['/404'] || {
-                        title: '404 - Page not found',
+                    site.pages.withUrl('/404') || {
                         content: '404 - not found :(',
                         relativePath: '/404',
-                        route: '',
-                    }
+                        url: '/404',
+                        kind: 'page',
+                        meta: {
+                            title: '404 - Page not found',
+                            layout: 'layout',
+                        },
+                    },
+                    site.pages
                 )
             ),
             statusCode: 404,
@@ -86,30 +107,27 @@ const refreshInterval = setInterval(async () => {
      */
     const page500 = async (error: Error): Promise<DevResponse> => {
         return {
-            chunk: addDevScript(html500.replace('<!-- message -->', error.message)),
+            chunk: addDevScript(html500!.replace('<!-- message -->', error.stack || '')),
             statusCode: 500,
             headers: { 'Content-Type': 'text/html' },
         };
     };
 
-    routePages = createRoutePages();
-
-    const watchDirectories = ['content', 'static', 'templates'];
     let lastRefresh = new Date().toISOString();
 
-    // refresh page data when a file changes
+    // refresh when a file changes
     chokidar
-        .watch(
-            watchDirectories.map((watchDir) => path.resolve(watchDir)),
-            { depth: 99, persistent: true }
-        )
+        .watch(rootDir, {
+            depth: 99,
+            persistent: true,
+            ignored: (path) => path.includes('node_modules') || path.startsWith('.'),
+        })
         .on('change', async (path) => {
             console.log(chalk.yellow('File changed: '), path.replace(process.cwd(), ''));
-            routePages = createRoutePages();
+            site = parseFiles();
             lastRefresh = new Date().toISOString();
+            logContent(site.pages);
         });
-
-    logRoutePages(routePages);
 
     const port = process.env.PORT || '8080';
     const host = process.env.HOST || 'localhost';
@@ -128,25 +146,30 @@ const refreshInterval = setInterval(async () => {
         const { chunk, statusCode, headers } = await (async (): Promise<DevResponse> => {
             try {
                 // check for static files
-                const staticFilePath = path.join('static', urlPath);
-                const staticChunk = fileReadBuffer(staticFilePath);
+                const staticFilePath = path.join(rootDir, urlPath);
+
+                const staticChunk = site.static.includes(staticFilePath) && fileReadBuffer(staticFilePath);
 
                 // static file exists for urlPath
                 if (staticChunk) {
                     const contentType = getContentType(staticFilePath);
+
                     return {
                         chunk: staticChunk,
                         statusCode: 200,
-                        headers: contentType ? { 'Content-Type': contentType } : {},
+                        headers: {
+                            'Cache-Control': 'no-cache',
+                            ...(contentType ? { 'Content-Type': contentType } : {}),
+                        },
                     };
                 }
 
-                // check for page route
-                const page = routePages[urlPath];
+                // check for content page
+                const content = site.pages.withUrl(urlPath);
 
-                // page route exists for url build it on the fly
-                if (page) {
-                    const chunk = await buildHtml(page, routePages);
+                // page page exists for url build it on the fly
+                if (content) {
+                    const chunk = await buildHtml(content, site.pages);
 
                     return {
                         chunk: addDevScript(chunk),
@@ -155,14 +178,15 @@ const refreshInterval = setInterval(async () => {
                     };
                 }
 
-                // no static file or page route found
+                console.log(chalk.red('404: '), urlPath);
+
+                // no static file or page page found
                 return page404();
             } catch (error) {
                 // error occurred
                 return page500(error as any);
             }
         })();
-
         response.writeHead(statusCode, headers);
         response.end(chunk);
     }).listen(port, () => {

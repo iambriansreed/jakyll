@@ -1,50 +1,70 @@
 import path from 'node:path';
-import handlebars from 'handlebars';
-import error from './error';
+import logError from './logError';
 import fileRead from './file';
-import { Page, RoutePages } from './page';
+import { Page, Site, parseMetaContent } from './parseFiles';
+import { rootDir } from './common';
+import { Liquid } from 'liquidjs';
+const engine = new Liquid({
+    partials: path.join(rootDir, '_includes'),
+    jekyllInclude: true,
+});
 
-export const templatesDir = path.resolve(process.cwd(), 'templates');
+async function applyLayout(page: Page, site: Record<string, Page[]>) {
+    const nextPage = { ...page };
 
-const defaultHandlebarsTemplate = handlebars.compile(fileRead(path.join(templatesDir, 'default.html')));
+    const layout = page.meta.layout || 'layout';
+    const layoutPath = path.join(rootDir, '_layouts', layout + '.html');
+    let layoutChunk = fileRead(layoutPath);
+
+    if (!layoutChunk) {
+        logError(
+            `Invalid layout on content page: '${page.relativePath}'. ` +
+                `layout file '${layoutPath}' does not exist.`
+        );
+        return '';
+    }
+
+    const [layoutMeta, layoutContent] = parseMetaContent(layoutChunk, layoutPath);
+
+    // merge the layout meta with the page meta
+    nextPage.meta = { ...nextPage.meta, ...layoutMeta };
+
+    const scope = {
+        content: page.content,
+        page: { ...nextPage.meta, ...page }, // flatten meta with page
+        site,
+    };
+
+    // run the layout content through the template engine
+    nextPage.content = await engine.parseAndRender(layoutContent, scope);
+
+    // if the layout has a layout, apply it
+    if (nextPage.meta.layout !== page.meta.layout) return applyLayout(nextPage, site);
+
+    return nextPage.content;
+}
 
 /**
- * apply the template to the content
+ * apply the layout to the content
  */
-export default async function buildHtml(page: Page, routePages: RoutePages = {}): Promise<string> {
-    let { template, ...meta } = page.meta || {};
+export default async function buildHtml(page: Page, pages: Site['pages']): Promise<string> {
+    let nextPage = { ...page };
 
-    let templateData = { ...meta, content: page.content };
-
-    // if the page has an expressionGenerator, run it and add the result to the template data
-    if (page.expressionGenerator) {
-        const { default: expressionGenerator } = await import(page.expressionGenerator);
-        templateData = { ...templateData, ...expressionGenerator(page, routePages) };
+    // if the page has an scopeGenerator, run it and add the result to the layout data
+    if (page.scopeGenerator) {
+        const { default: scopeGenerator } = await import(page.scopeGenerator);
+        const generatedScope = scopeGenerator(page, pages.list);
+        nextPage.meta = { ...nextPage.meta, ...generatedScope };
     }
 
-    // apply the meta data to the page content in case it has handlebar expressions
-    templateData.content = handlebars.compile(page.content)(templateData);
+    const site = pages.kinds;
 
-    if (template && template !== 'default') {
-        // apply the template to the page content
-        // todo: should support hbs and other template file types
-        const templatePath = path.join(templatesDir, template + '.html');
+    // run the content through the template engine
+    nextPage.content = await engine.parseAndRender(nextPage.content, {
+        content: nextPage.content,
+        page: { ...nextPage.meta, ...nextPage },
+        site,
+    });
 
-        const templateChunk = fileRead(templatePath);
-
-        if (!templateChunk) {
-            error(
-                `Invalid template on content page: '${page.relativePath}'. ` +
-                    `Template file '${template}' does not exist.`
-            );
-
-            return '';
-        }
-
-        const metaTemplate = handlebars.compile(templateChunk);
-
-        templateData.content = metaTemplate(templateData);
-    }
-
-    return defaultHandlebarsTemplate(templateData);
+    return await applyLayout(nextPage, site);
 }
