@@ -4,10 +4,11 @@ import url from 'node:url';
 import chalk from 'chalk';
 import chokidar from 'chokidar';
 
-import fileRead, { fileReadBuffer } from './utils/file';
+import { fileReadBuffer } from './utils/file';
 import buildHtml from './utils/buildHtml';
 import { rootDir, validateExistingSite } from './utils/common';
 import { Site, parseFiles } from './utils/parseFiles';
+import html500 from './utils/500html';
 
 /**
  * log the content created
@@ -26,8 +27,6 @@ type DevResponse = {
     statusCode: number;
     headers: Record<string, string>;
 };
-
-const html500 = fileRead(path.join(path.dirname(require.main?.filename || ''), '500.html'));
 
 export default async () => {
     console.log(chalk.greenBright('Dev mode starting...'));

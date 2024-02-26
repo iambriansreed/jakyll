@@ -52,9 +52,15 @@ export default async function buildHtml(page: Page, pages: Site['pages']): Promi
 
     // if the page has an scopeGenerator, run it and add the result to the layout data
     if (page.scopeGenerator) {
-        const { default: scopeGenerator } = await import(page.scopeGenerator);
-        const generatedScope = scopeGenerator(page, pages.list);
-        nextPage.meta = { ...nextPage.meta, ...generatedScope };
+        const { default: scopeGenerator } = await import(page.scopeGenerator!);
+
+        // ok, fine, but is it a function?
+        if (typeof scopeGenerator !== 'function')
+            logError(`Invalid scopeGenerator on page: '${page.relativePath}'`);
+        else {
+            const generatedScope = await scopeGenerator(page, pages.list);
+            nextPage.meta = { ...nextPage.meta, ...generatedScope };
+        }
     }
 
     const site = pages.kinds;
