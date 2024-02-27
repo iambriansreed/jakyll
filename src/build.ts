@@ -30,7 +30,7 @@ export default async () => {
     for (const content of site.pages.list) {
         const pageContent = await buildHtml(content, site.pages);
 
-        const pagePath = path.join(buildPath, content.relativePath);
+        const pagePath = path.join(buildPath, content.url);
 
         const pageDirPath = filePathToDirs(pagePath);
 
