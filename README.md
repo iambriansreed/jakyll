@@ -1,6 +1,6 @@
 # Jakyll.js
 
-Jakyll.js is a Jekyll alternative built with TypeScript & Node.
+Jakyll.js is a drop in Jekyll alternative built with TypeScript & Node.
 
 ### Install
 
