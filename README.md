@@ -1,4 +1,4 @@
-# Jakyll
+<img src="logo.png" style="margin: 0 0 20px" />
 
 Jakyll is a drop in Jekyll alternative built with TypeScript & Node.
 
@@ -50,6 +50,12 @@ Creates a purely static copy of the site to the `build` directory.
 `jakyll -deploy`
 
 Runs the build command and copies it to the `gh-pages` branch and pushes the branch to github.
+
+## About
+
+Jakyll was created to transform a local JavaScript developers Meetup Group website from using Jekyll, which has numerous Ruby installation requirements, to a platform that JavaScript developers can easily update and contribute to.
+
+See it in action here: [https://norfolkjs.org](https://norfolkjs.org)
 
 ---
 
