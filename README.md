@@ -1,14 +1,31 @@
-# Jakyll.js
+# Jakyll
 
-Jakyll.js is a drop in Jekyll alternative built with TypeScript & Node.
+Jakyll is a drop in Jekyll alternative built with TypeScript & Node.
 
-### Install
+## Install
 
 `npm install jakyll`
 
 -   installs `jakyll`
 -   adds `package.json` scripts
 -   adds the github action
+
+## Scripts
+
+These scripts are automatically added to your `package.json` file during the install.
+
+```json
+{
+    ...
+    "scripts": {
+        "dev": "jakyll -dev",
+        "build": "jakyll -build",
+        "start": "jakyll -start",
+        "deploy": "jakyll -deploy"
+    },
+    ...
+}
+```
 
 ### Run in development mode
 
